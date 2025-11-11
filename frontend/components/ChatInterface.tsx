@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 
 interface Message {
   id: string;
@@ -18,19 +14,27 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Hello! I'm your AI assistant. How can I help you today?",
+      content: "Hello! I'm Claude. How can I help you today?",
       role: "assistant",
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+    }
+  }, [input]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -65,90 +69,69 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-      <Card className="flex h-[90vh] w-full max-w-4xl flex-col shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center gap-3 border-b bg-slate-50 dark:bg-slate-900 px-6 py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500">
-            <Bot className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold">AI Chat Assistant</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Always here to help
-            </p>
-          </div>
-        </div>
-
-        {/* Messages Area */}
-        <ScrollArea className="flex-1 p-6">
-          <div ref={scrollRef} className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {message.role === "assistant" && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500">
-                    <Bot className="h-5 w-5 text-white" />
-                  </div>
-                )}
+    <div className="flex h-screen flex-col bg-white dark:bg-zinc-900">
+      {/* Messages Area */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`mb-8 ${
+                message.role === "user" ? "ml-auto max-w-2xl" : ""
+              }`}
+            >
+              <div className="mb-2 flex items-center gap-2">
                 <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                    message.role === "user"
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  className={`flex h-6 w-6 items-center justify-center rounded ${
+                    message.role === "assistant"
+                      ? "bg-amber-600 text-white"
+                      : "bg-zinc-200 dark:bg-zinc-700"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
-                  <p
-                    className={`mt-1 text-xs ${
-                      message.role === "user"
-                        ? "text-blue-100"
-                        : "text-slate-500 dark:text-slate-400"
-                    }`}
-                  >
-                    {message.timestamp.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                  <span className="text-xs font-semibold">
+                    {message.role === "assistant" ? "C" : "U"}
+                  </span>
                 </div>
-                {message.role === "user" && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-700 dark:bg-slate-300">
-                    <User className="h-5 w-5 text-white dark:text-slate-700" />
-                  </div>
-                )}
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  {message.role === "assistant" ? "Claude" : "You"}
+                </span>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+              <div className="pl-8">
+                <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-zinc-900 dark:text-zinc-100">
+                  {message.content}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-        {/* Input Area */}
-        <div className="border-t bg-slate-50 dark:bg-slate-900 p-4">
-          <div className="flex gap-2">
-            <Input
+      {/* Input Area */}
+      <div className="border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mx-auto max-w-3xl px-4 py-6">
+          <div className="relative flex items-end gap-2 rounded-2xl border border-zinc-300 bg-white px-4 py-3 shadow-sm focus-within:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-zinc-600">
+            <textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Type your message..."
-              className="flex-1"
+              placeholder="Reply to Claude..."
+              rows={1}
+              className="max-h-[200px] flex-1 resize-none bg-transparent text-[15px] text-zinc-900 placeholder-zinc-400 outline-none dark:text-zinc-100 dark:placeholder-zinc-500"
             />
-            <Button
+            <button
               onClick={handleSend}
-              size="icon"
-              className="bg-blue-500 hover:bg-blue-600"
+              disabled={!input.trim()}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-white transition-all hover:bg-zinc-700 disabled:bg-zinc-200 disabled:text-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:disabled:bg-zinc-700 dark:disabled:text-zinc-600"
             >
-              <Send className="h-5 w-5" />
-            </Button>
+              <ArrowUp className="h-5 w-5" />
+            </button>
           </div>
-          <p className="mt-2 text-center text-xs text-slate-500 dark:text-slate-400">
-            Press Enter to send • Shift + Enter for new line
+          <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
+            Claude can make mistakes. Please double-check responses.
           </p>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
