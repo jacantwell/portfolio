@@ -68,6 +68,39 @@ export function ChatInterface() {
     }
   };
 
+  const handleSuggestedMessage = (message: string) => {
+    setInput(message);
+    // Automatically send the message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: message,
+      role: "user",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+
+    // Simulate AI response
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "This is a placeholder response. Backend integration coming soon!",
+        role: "assistant",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    }, 1000);
+  };
+
+  const suggestedMessages = [
+    "Walk me through your tech stack",
+    "Have you worked with cloud platforms?",
+    "Show me React projects",
+  ];
+
+  const hasUserMessage = messages.some((m) => m.role === "user");
+
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-zinc-900">
       {/* Messages Area */}
@@ -107,8 +140,23 @@ export function ChatInterface() {
       </div>
 
       {/* Input Area */}
-      <div className="py-10">
+      <div className={hasUserMessage ? "" : "py-15"}>
         <div className="mx-auto max-w-3xl px-4 py-6">
+          {/* Suggested Messages */}
+          {!hasUserMessage && (
+            <div className="mb-4 flex flex-col gap-2">
+              {suggestedMessages.map((message, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestedMessage(message)}
+                  className="rounded-lg border border-zinc-300 bg-white px-4 py-3 text-left text-sm text-zinc-700 transition-all hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-700"
+                >
+                  {message}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="relative flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-4 py-2 shadow-sm focus-within:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-zinc-600">
             <textarea
               ref={textareaRef}
@@ -127,9 +175,9 @@ export function ChatInterface() {
               <ArrowUp className="h-5 w-5" />
             </button>
           </div>
-          <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
+          {/* <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
             Jasper can make mistakes. Please double-check responses.
-          </p>
+          </p> */}
         </div>
       </div>
     </div>
