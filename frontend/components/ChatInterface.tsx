@@ -14,7 +14,7 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Hello! I'm Claude. How can I help you today?",
+      content: "Hello! I'm Jasper. How can I help you today?",
       role: "assistant",
       timestamp: new Date(),
     },
@@ -89,11 +89,11 @@ export function ChatInterface() {
                   }`}
                 >
                   <span className="text-xs font-semibold">
-                    {message.role === "assistant" ? "C" : "U"}
+                    {message.role === "assistant" ? "J" : "U"}
                   </span>
                 </div>
                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                  {message.role === "assistant" ? "Claude" : "You"}
+                  {message.role === "assistant" ? "Jasper" : "You"}
                 </span>
               </div>
               <div className="pl-8">
@@ -107,15 +107,15 @@ export function ChatInterface() {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="py-10">
         <div className="mx-auto max-w-3xl px-4 py-6">
-          <div className="relative flex items-end gap-2 rounded-2xl border border-zinc-300 bg-white px-4 py-3 shadow-sm focus-within:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-zinc-600">
+          <div className="relative flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-4 py-2 shadow-sm focus-within:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-zinc-600">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Reply to Claude..."
+              placeholder="Ask Jasper a question..."
               rows={1}
               className="max-h-[200px] flex-1 resize-none bg-transparent text-[15px] text-zinc-900 placeholder-zinc-400 outline-none dark:text-zinc-100 dark:placeholder-zinc-500"
             />
@@ -128,7 +128,7 @@ export function ChatInterface() {
             </button>
           </div>
           <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
-            Claude can make mistakes. Please double-check responses.
+            Jasper can make mistakes. Please double-check responses.
           </p>
         </div>
       </div>
