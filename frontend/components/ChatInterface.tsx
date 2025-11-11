@@ -140,7 +140,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input Area */}
-      <div className={hasUserMessage ? "py-4" : "py-10"}>
+      <div className={hasUserMessage ? "" : "py-15"}>
         <div className="mx-auto max-w-3xl px-4 py-6">
           {/* Suggested Messages */}
           {!hasUserMessage && (
@@ -175,9 +175,9 @@ export function ChatInterface() {
               <ArrowUp className="h-5 w-5" />
             </button>
           </div>
-          <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
+          {/* <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
             Jasper can make mistakes. Please double-check responses.
-          </p>
+          </p> */}
         </div>
       </div>
     </div>
