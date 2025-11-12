@@ -10,6 +10,8 @@ interface Message {
   timestamp: Date;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -20,8 +22,10 @@ export function ChatInterface() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -36,8 +40,8 @@ export function ChatInterface() {
     }
   }, [input]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || isStreaming) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -47,18 +51,94 @@ export function ChatInterface() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = input;
     setInput("");
+    setIsStreaming(true);
 
-    // Simulate AI response (placeholder for future backend integration)
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "This is a placeholder response. Backend integration coming soon!",
-        role: "assistant",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
+    // Create assistant message placeholder
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      content: "",
+      role: "assistant",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, assistantMessage]);
+
+    try {
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController();
+
+      const response = await fetch(`${API_URL}/chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
+        body: JSON.stringify({ message: userInput }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("Failed to get response reader");
+      }
+
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data:")) {
+            const data = line.slice(5).trim();
+            if (data) {
+              // Update the assistant message with the new content
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? { ...msg, content: msg.content + data }
+                    : msg
+                )
+              );
+            }
+          }
+        }
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
+        console.log("Request aborted");
+      } else {
+        console.error("Error streaming response:", error);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? {
+                  ...msg,
+                  content:
+                    msg.content ||
+                    "Sorry, I encountered an error. Please try again.",
+                }
+              : msg
+          )
+        );
+      }
+    } finally {
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -68,9 +148,13 @@ export function ChatInterface() {
     }
   };
 
-  const handleSuggestedMessage = (message: string) => {
+  const handleSuggestedMessage = async (message: string) => {
+    if (isStreaming) return;
+
     setInput(message);
-    // Automatically send the message
+    // Small delay to show the input before sending
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: message,
@@ -80,17 +164,90 @@ export function ChatInterface() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setIsStreaming(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "This is a placeholder response. Backend integration coming soon!",
-        role: "assistant",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
+    // Create assistant message placeholder
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      content: "",
+      role: "assistant",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, assistantMessage]);
+
+    try {
+      abortControllerRef.current = new AbortController();
+
+      const response = await fetch(`${API_URL}/chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
+        body: JSON.stringify({ message }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("Failed to get response reader");
+      }
+
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data:")) {
+            const data = line.slice(5).trim();
+            if (data) {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? { ...msg, content: msg.content + data }
+                    : msg
+                )
+              );
+            }
+          }
+        }
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
+        console.log("Request aborted");
+      } else {
+        console.error("Error streaming response:", error);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? {
+                  ...msg,
+                  content:
+                    msg.content ||
+                    "Sorry, I encountered an error. Please try again.",
+                }
+              : msg
+          )
+        );
+      }
+    } finally {
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
   };
 
   const suggestedMessages = [
@@ -169,7 +326,7 @@ export function ChatInterface() {
             />
             <button
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isStreaming}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-white transition-all hover:bg-zinc-700 disabled:bg-zinc-200 disabled:text-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:disabled:bg-zinc-700 dark:disabled:text-zinc-600"
             >
               <ArrowUp className="h-5 w-5" />
