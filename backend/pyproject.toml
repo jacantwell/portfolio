@@ -4,4 +4,16 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "fastapi>=0.121.1",
+    "langchain>=1.0.5",
+    "langchain-chroma>=1.0.0",
+    "langchain-community>=0.4.1",
+    "langchain-google-genai>=3.0.2",
+    "langchain-google-vertexai>=3.0.3",
+    "langchain-text-splitters>=1.0.0",
+    "markdown>=3.10",
+    "sse-starlette>=3.0.3",
+    "unstructured>=0.18.18",
+    "uvicorn>=0.38.0",
+]
