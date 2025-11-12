@@ -147,11 +147,12 @@ async def generate_agent_stream(
                     if delta:
                         yield {"event": "update", "data": delta}
 
-            elif content_type == "tool_call":
-                tool_name = last_content_block.get("name", "unknown")
-                yield {"event": "tool", "data": f"\n[Using tool: {tool_name}]\n"}
-                # Reset text tracking when switching to tool calls
-                last_text = ""
+            # TODO: Can add update messages for tool calls if needed
+            # elif content_type == "tool_call":
+            #     tool_name = last_content_block.get("name", "unknown")
+            #     yield {"event": "tool", "data": f"\n[Using tool: {tool_name}]\n"}
+            #     # Reset text tracking when switching to tool calls
+            #     last_text = ""
 
     except Exception as e:
         logger.error(f"Error during streaming: {e}", exc_info=True)
