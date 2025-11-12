@@ -43,21 +43,7 @@ export function ChatInterface() {
     }
   }, [input]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isStreaming) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input,
-      role: "user",
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    const userInput = input;
-    setInput("");
-    setIsStreaming(true);
-
+  const streamResponse = async (messageContent: string) => {
     // Create assistant message placeholder
     const assistantMessageId = (Date.now() + 1).toString();
     const assistantMessage: Message = {
@@ -79,7 +65,7 @@ export function ChatInterface() {
           "Content-Type": "application/json",
           Accept: "text/event-stream",
         },
-        body: JSON.stringify({ message: userInput }),
+        body: JSON.stringify({ message: messageContent }),
         signal: abortControllerRef.current.signal,
       });
 
@@ -173,6 +159,24 @@ export function ChatInterface() {
       setIsStreaming(false);
       abortControllerRef.current = null;
     }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isStreaming) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: input,
+      role: "user",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    const userInput = input;
+    setInput("");
+    setIsStreaming(true);
+
+    await streamResponse(userInput);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -200,119 +204,7 @@ export function ChatInterface() {
     setInput("");
     setIsStreaming(true);
 
-    // Create assistant message placeholder
-    const assistantMessageId = (Date.now() + 1).toString();
-    const assistantMessage: Message = {
-      id: assistantMessageId,
-      content: "",
-      role: "assistant",
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, assistantMessage]);
-
-    try {
-      abortControllerRef.current = new AbortController();
-
-      const response = await fetch(`${API_URL}/chat/stream`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "text/event-stream",
-        },
-        body: JSON.stringify({ message }),
-        signal: abortControllerRef.current.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (!reader) {
-        throw new Error("Failed to get response reader");
-      }
-      let buffer = "";
-      let textQueue = ""; // Queue for text to be displayed
-      let isDisplaying = false;
-
-      // Function to display queued text with delay
-      const displayQueuedText = async () => {
-        if (isDisplaying) return;
-        isDisplaying = true;
-
-        while (textQueue.length > 0) {
-          // Take 1-3 characters at a time for a natural feel
-          const chunkSize = Math.min(
-            Math.floor(Math.random() * 3) + 1,
-            textQueue.length
-          );
-          const chunk = textQueue.slice(0, chunkSize);
-          textQueue = textQueue.slice(chunkSize);
-
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: msg.content + chunk }
-                : msg
-            )
-          );
-
-          await new Promise((resolve) => setTimeout(resolve, TEXT_DISPLAY_DELAY));
-        }
-
-        isDisplaying = false;
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          // Make sure all queued text is displayed before finishing
-          while (textQueue.length > 0) {
-            await new Promise((resolve) => setTimeout(resolve, 10));
-          }
-          break;
-        }
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.startsWith("data:")) {
-            const data = line.slice(5).trim();
-            if (data) {
-              // Add to queue instead of displaying immediately
-              textQueue += data;
-              displayQueuedText(); // Start displaying if not already
-            }
-          }
-        }
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error && error.name === "AbortError") {
-        console.log("Request aborted");
-      } else {
-        console.error("Error streaming response:", error);
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantMessageId
-              ? {
-                  ...msg,
-                  content:
-                    msg.content ||
-                    "Sorry, I encountered an error. Please try again.",
-                }
-              : msg
-          )
-        );
-      }
-    } finally {
-      setIsStreaming(false);
-      abortControllerRef.current = null;
-    }
+    await streamResponse(message);
   };
 
   const suggestedMessages = [
