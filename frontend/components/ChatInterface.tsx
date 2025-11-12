@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
 
+const TEXT_DISPLAY_DELAY = 30; // Delay in ms for text display
+
 interface Message {
   id: string;
   content: string;
@@ -36,7 +38,8 @@ export function ChatInterface() {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
     }
   }, [input]);
 
@@ -92,22 +95,43 @@ export function ChatInterface() {
       }
 
       let buffer = "";
-      let wordBuffer = ""; // Buffer to accumulate characters for word-by-word display
-      let displayedContent = ""; // Track what's been displayed
+      let textQueue = ""; // Queue for text to be displayed
+      let isDisplaying = false;
+
+      // Function to display queued text with delay
+      const displayQueuedText = async () => {
+        if (isDisplaying) return;
+        isDisplaying = true;
+
+        while (textQueue.length > 0) {
+          // Take 1-3 characters at a time for a natural feel
+          const chunkSize = Math.min(
+            Math.floor(Math.random() * 3) + 1,
+            textQueue.length
+          );
+          const chunk = textQueue.slice(0, chunkSize);
+          textQueue = textQueue.slice(chunkSize);
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: msg.content + chunk }
+                : msg
+            )
+          );
+
+          await new Promise((resolve) => setTimeout(resolve, TEXT_DISPLAY_DELAY));
+        }
+
+        isDisplaying = false;
+      };
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          // Flush any remaining word buffer at the end
-          if (wordBuffer) {
-            displayedContent += wordBuffer;
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMessageId
-                  ? { ...msg, content: displayedContent }
-                  : msg
-              )
-            );
+          // Make sure all queued text is displayed before finishing
+          while (textQueue.length > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 10));
           }
           break;
         }
@@ -120,30 +144,9 @@ export function ChatInterface() {
           if (line.startsWith("data:")) {
             const data = line.slice(5).trim();
             if (data) {
-              // Add incoming data to word buffer
-              wordBuffer += data;
-
-              // Check if we have complete words to display
-              // Split on spaces, but keep track of incomplete words
-              const lastSpaceIndex = wordBuffer.lastIndexOf(" ");
-              const lastNewlineIndex = wordBuffer.lastIndexOf("\n");
-              const lastBreakIndex = Math.max(lastSpaceIndex, lastNewlineIndex);
-
-              if (lastBreakIndex !== -1) {
-                // We have at least one complete word
-                const completeText = wordBuffer.substring(0, lastBreakIndex + 1);
-                displayedContent += completeText;
-                wordBuffer = wordBuffer.substring(lastBreakIndex + 1);
-
-                // Update the message with complete words
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === assistantMessageId
-                      ? { ...msg, content: displayedContent }
-                      : msg
-                  )
-                );
-              }
+              // Add to queue instead of displaying immediately
+              textQueue += data;
+              displayQueuedText(); // Start displaying if not already
             }
           }
         }
@@ -231,24 +234,44 @@ export function ChatInterface() {
       if (!reader) {
         throw new Error("Failed to get response reader");
       }
-
       let buffer = "";
-      let wordBuffer = ""; // Buffer to accumulate characters for word-by-word display
-      let displayedContent = ""; // Track what's been displayed
+      let textQueue = ""; // Queue for text to be displayed
+      let isDisplaying = false;
+
+      // Function to display queued text with delay
+      const displayQueuedText = async () => {
+        if (isDisplaying) return;
+        isDisplaying = true;
+
+        while (textQueue.length > 0) {
+          // Take 1-3 characters at a time for a natural feel
+          const chunkSize = Math.min(
+            Math.floor(Math.random() * 3) + 1,
+            textQueue.length
+          );
+          const chunk = textQueue.slice(0, chunkSize);
+          textQueue = textQueue.slice(chunkSize);
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: msg.content + chunk }
+                : msg
+            )
+          );
+
+          await new Promise((resolve) => setTimeout(resolve, TEXT_DISPLAY_DELAY));
+        }
+
+        isDisplaying = false;
+      };
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          // Flush any remaining word buffer at the end
-          if (wordBuffer) {
-            displayedContent += wordBuffer;
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMessageId
-                  ? { ...msg, content: displayedContent }
-                  : msg
-              )
-            );
+          // Make sure all queued text is displayed before finishing
+          while (textQueue.length > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 10));
           }
           break;
         }
@@ -261,30 +284,9 @@ export function ChatInterface() {
           if (line.startsWith("data:")) {
             const data = line.slice(5).trim();
             if (data) {
-              // Add incoming data to word buffer
-              wordBuffer += data;
-
-              // Check if we have complete words to display
-              // Split on spaces, but keep track of incomplete words
-              const lastSpaceIndex = wordBuffer.lastIndexOf(" ");
-              const lastNewlineIndex = wordBuffer.lastIndexOf("\n");
-              const lastBreakIndex = Math.max(lastSpaceIndex, lastNewlineIndex);
-
-              if (lastBreakIndex !== -1) {
-                // We have at least one complete word
-                const completeText = wordBuffer.substring(0, lastBreakIndex + 1);
-                displayedContent += completeText;
-                wordBuffer = wordBuffer.substring(lastBreakIndex + 1);
-
-                // Update the message with complete words
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === assistantMessageId
-                      ? { ...msg, content: displayedContent }
-                      : msg
-                  )
-                );
-              }
+              // Add to queue instead of displaying immediately
+              textQueue += data;
+              displayQueuedText(); // Start displaying if not already
             }
           }
         }
