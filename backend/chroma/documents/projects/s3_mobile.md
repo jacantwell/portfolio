@@ -1,3 +1,16 @@
+---
+type: project
+name: s3_mobile
+status: completed
+languages: [Python, TypeScript, JavaScript, Bash]
+frameworks: [ReactNative, Expo EAS]
+cloud_services: [AWS Lambda, S3, Cognito, CloudFormation]
+skills: [serverless, mobile_development, cloud_architecture, IaC]
+github_url: https://github.com/jacantwell/s3-mobile-storage
+live_url: null
+description: Personal mobile app for temporary photo storage using AWS S3
+---
+
 # s3 Mobile App
 
 While travelling, my camera roll filled up so quickly that I found myself in a bind: I didn't want to get stuck paying for an ongoing, expensive cloud subscription service, but I also didn't have easy access to a hard drive for offloading photos. My personal solution to this problem is this app. I designed the S3 Mobile App not as a cloud storage alternative, but as a cheap, easy-to-use, temporary storage solution. It lets me quickly dump media from my phone into my own AWS S3 bucket to free up space until I get home. To use this project yourself (on your Android phone), all you'll need is an AWS and Expo account.

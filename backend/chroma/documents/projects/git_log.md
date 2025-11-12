@@ -1,3 +1,16 @@
+---
+type: project
+name: git-log
+status: completed
+languages: [Go]
+frameworks: []
+cloud_services: []
+skills: [LLMs, RestAPI, ]
+github_url: https://github.com/jacantwell/git-log
+live_url: https://github.com/jacantwell/work-log
+description: Work history tracking using Github PR and Commit data.
+---
+
 # Git-Log
 
 ## What's This About?

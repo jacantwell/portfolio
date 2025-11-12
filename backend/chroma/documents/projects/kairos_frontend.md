@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+---
+type: project
+name: kairos
+status: in_progress
+languages: [TypeScript, JavaScript]
+frameworks: [React, NextJS, TailwindCSS]
+cloud_services: [AWS Cloudfront, Route 53, S3, CloudFormation]
+skills: [Web Development, OAuthFlow, IaC, Tanstack]
+github_url: https://github.com/jacantwell/kairos-web
+live_url: findkairos.com
+description: A platform for connecting bikepackers on the road. Track your journey and find nearby travellers to connect with.
+---
 
-## Getting Started
+# Kairos
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Kairos is a bikepacking journey tracking application. The platform allows users to create journeys, add markers (both past and planned), and discover other bikepackers near their routes.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Technical Implementation
+### Frontend
+- Language: TypeScript/JavaScript
+- Framework: React/Next.js/TailwindCSS
+- Key features: [OAuthFlow, Email Verification, NextJS App Router]
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Infrastructure
+- Cloud Provider: AWS
+- Services: Cloudfront, Router 53, Cloudfront S3
+- Deployment: [Github Action]
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Key Achievements
+ - Implements OAuth flow with email verification.
+ - User session management allowing users to remain logged in.
+ - NextJS App Router for page naviagtion.
+ - Tanstack integration for API queries.
+ - Re-usable componets allowing for easy development.
