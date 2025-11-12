@@ -316,7 +316,7 @@ export function ChatInterface() {
   const suggestedMessages = [
     "Walk me through your tech stack",
     "Have you worked with cloud platforms?",
-    "Show me React projects",
+    "Can you tell me about Jasper's s3-mobile project",
   ];
 
   const hasUserMessage = messages.some((m) => m.role === "user");
