@@ -92,10 +92,25 @@ export function ChatInterface() {
       }
 
       let buffer = "";
+      let wordBuffer = ""; // Buffer to accumulate characters for word-by-word display
+      let displayedContent = ""; // Track what's been displayed
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Flush any remaining word buffer at the end
+          if (wordBuffer) {
+            displayedContent += wordBuffer;
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: displayedContent }
+                  : msg
+              )
+            );
+          }
+          break;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
@@ -105,14 +120,30 @@ export function ChatInterface() {
           if (line.startsWith("data:")) {
             const data = line.slice(5).trim();
             if (data) {
-              // Update the assistant message with the new content
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: msg.content + data }
-                    : msg
-                )
-              );
+              // Add incoming data to word buffer
+              wordBuffer += data;
+
+              // Check if we have complete words to display
+              // Split on spaces, but keep track of incomplete words
+              const lastSpaceIndex = wordBuffer.lastIndexOf(" ");
+              const lastNewlineIndex = wordBuffer.lastIndexOf("\n");
+              const lastBreakIndex = Math.max(lastSpaceIndex, lastNewlineIndex);
+
+              if (lastBreakIndex !== -1) {
+                // We have at least one complete word
+                const completeText = wordBuffer.substring(0, lastBreakIndex + 1);
+                displayedContent += completeText;
+                wordBuffer = wordBuffer.substring(lastBreakIndex + 1);
+
+                // Update the message with complete words
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: displayedContent }
+                      : msg
+                  )
+                );
+              }
             }
           }
         }
@@ -202,10 +233,25 @@ export function ChatInterface() {
       }
 
       let buffer = "";
+      let wordBuffer = ""; // Buffer to accumulate characters for word-by-word display
+      let displayedContent = ""; // Track what's been displayed
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Flush any remaining word buffer at the end
+          if (wordBuffer) {
+            displayedContent += wordBuffer;
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: displayedContent }
+                  : msg
+              )
+            );
+          }
+          break;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
@@ -215,13 +261,30 @@ export function ChatInterface() {
           if (line.startsWith("data:")) {
             const data = line.slice(5).trim();
             if (data) {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: msg.content + data }
-                    : msg
-                )
-              );
+              // Add incoming data to word buffer
+              wordBuffer += data;
+
+              // Check if we have complete words to display
+              // Split on spaces, but keep track of incomplete words
+              const lastSpaceIndex = wordBuffer.lastIndexOf(" ");
+              const lastNewlineIndex = wordBuffer.lastIndexOf("\n");
+              const lastBreakIndex = Math.max(lastSpaceIndex, lastNewlineIndex);
+
+              if (lastBreakIndex !== -1) {
+                // We have at least one complete word
+                const completeText = wordBuffer.substring(0, lastBreakIndex + 1);
+                displayedContent += completeText;
+                wordBuffer = wordBuffer.substring(lastBreakIndex + 1);
+
+                // Update the message with complete words
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: displayedContent }
+                      : msg
+                  )
+                );
+              }
             }
           }
         }
