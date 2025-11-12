@@ -3,12 +3,16 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
 
+const TEXT_DISPLAY_DELAY = 30; // Delay in ms for text display
+
 interface Message {
   id: string;
   content: string;
   role: "user" | "assistant";
   timestamp: Date;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
@@ -20,8 +24,10 @@ export function ChatInterface() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -32,12 +38,131 @@ export function ChatInterface() {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
     }
   }, [input]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const streamResponse = async (messageContent: string) => {
+    // Create assistant message placeholder
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      content: "",
+      role: "assistant",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, assistantMessage]);
+
+    try {
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController();
+
+      const response = await fetch(`${API_URL}/chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
+        body: JSON.stringify({ message: messageContent }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("Failed to get response reader");
+      }
+
+      let buffer = "";
+      let textQueue = ""; // Queue for text to be displayed
+      let isDisplaying = false;
+
+      // Function to display queued text with delay
+      const displayQueuedText = async () => {
+        if (isDisplaying) return;
+        isDisplaying = true;
+
+        while (textQueue.length > 0) {
+          // Take 1-3 characters at a time for a natural feel
+          const chunkSize = Math.min(
+            Math.floor(Math.random() * 3) + 1,
+            textQueue.length
+          );
+          const chunk = textQueue.slice(0, chunkSize);
+          textQueue = textQueue.slice(chunkSize);
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: msg.content + chunk }
+                : msg
+            )
+          );
+
+          await new Promise((resolve) => setTimeout(resolve, TEXT_DISPLAY_DELAY));
+        }
+
+        isDisplaying = false;
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          // Make sure all queued text is displayed before finishing
+          while (textQueue.length > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+          }
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data:")) {
+            const data = line.slice(5).trim();
+            if (data) {
+              // Add to queue instead of displaying immediately
+              textQueue += data;
+              displayQueuedText(); // Start displaying if not already
+            }
+          }
+        }
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
+        console.log("Request aborted");
+      } else {
+        console.error("Error streaming response:", error);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? {
+                  ...msg,
+                  content:
+                    msg.content ||
+                    "Sorry, I encountered an error. Please try again.",
+                }
+              : msg
+          )
+        );
+      }
+    } finally {
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isStreaming) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -47,18 +172,11 @@ export function ChatInterface() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = input;
     setInput("");
+    setIsStreaming(true);
 
-    // Simulate AI response (placeholder for future backend integration)
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "This is a placeholder response. Backend integration coming soon!",
-        role: "assistant",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
+    await streamResponse(userInput);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -68,9 +186,13 @@ export function ChatInterface() {
     }
   };
 
-  const handleSuggestedMessage = (message: string) => {
+  const handleSuggestedMessage = async (message: string) => {
+    if (isStreaming) return;
+
     setInput(message);
-    // Automatically send the message
+    // Small delay to show the input before sending
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: message,
@@ -80,23 +202,15 @@ export function ChatInterface() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setIsStreaming(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "This is a placeholder response. Backend integration coming soon!",
-        role: "assistant",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
+    await streamResponse(message);
   };
 
   const suggestedMessages = [
     "Walk me through your tech stack",
     "Have you worked with cloud platforms?",
-    "Show me React projects",
+    "Can you tell me about Jasper's s3-mobile project",
   ];
 
   const hasUserMessage = messages.some((m) => m.role === "user");
@@ -169,7 +283,7 @@ export function ChatInterface() {
             />
             <button
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isStreaming}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-white transition-all hover:bg-zinc-700 disabled:bg-zinc-200 disabled:text-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:disabled:bg-zinc-700 dark:disabled:text-zinc-600"
             >
               <ArrowUp className="h-5 w-5" />

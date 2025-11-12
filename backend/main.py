@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
@@ -75,6 +76,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Configure CORS to allow frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Next.js default port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -137,11 +147,12 @@ async def generate_agent_stream(
                     if delta:
                         yield {"event": "update", "data": delta}
 
-            elif content_type == "tool_call":
-                tool_name = last_content_block.get("name", "unknown")
-                yield {"event": "tool", "data": f"\n[Using tool: {tool_name}]\n"}
-                # Reset text tracking when switching to tool calls
-                last_text = ""
+            # TODO: Can add update messages for tool calls if needed
+            # elif content_type == "tool_call":
+            #     tool_name = last_content_block.get("name", "unknown")
+            #     yield {"event": "tool", "data": f"\n[Using tool: {tool_name}]\n"}
+            #     # Reset text tracking when switching to tool calls
+            #     last_text = ""
 
     except Exception as e:
         logger.error(f"Error during streaming: {e}", exc_info=True)
