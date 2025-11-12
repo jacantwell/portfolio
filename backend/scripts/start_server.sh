@@ -11,4 +11,4 @@ HOST="127.0.0.1"
 PORT="8000"
 
 # Launch uvicorn
-poetry run uvicorn main:app --host $HOST --port $PORT --reload
+poetry run uvicorn app:app --host $HOST --port $PORT --reload
