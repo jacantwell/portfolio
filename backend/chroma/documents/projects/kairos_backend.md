@@ -1,18 +1,17 @@
-# Kairos Backend - Developer Documentation
+---
+type: project
+name: kairos
+status: in_progress
+languages: [Python]
+frameworks: [FastAPI, Docker]
+cloud_services: [AWS Lambda, S3, Resend, CloudFormation, MongoDB]
+skills: [serverless, mobile_development, cloud_architecture, IaC]
+github_url: https://github.com/jacantwell/kairos-backend
+live_url: findkairos.com
+description: Backend API for the Kairos platform
+---
 
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Project Structure](#project-structure)
-4. [Getting Started](#getting-started)
-5. [Development Workflow](#development-workflow)
-6. [API Documentation](#api-documentation)
-7. [Database Design](#database-design)
-8. [Authentication & Security](#authentication--security)
-9. [Deployment](#deployment)
-10. [Testing](#testing)
-11. [Contributing](#contributing)
+# Kairos
 
 ## Overview
 
