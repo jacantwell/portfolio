@@ -1,0 +1,13 @@
+__pycache__
+kairos.egg-info
+*.pyc
+.mypy_cache
+.coverage
+htmlcov
+.cache
+.venv
+.env
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
