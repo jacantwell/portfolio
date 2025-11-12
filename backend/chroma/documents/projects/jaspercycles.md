@@ -1,0 +1,1 @@
+Personally website that makes use of the Strava API to track my bikepacking trip. Built using React+Vite and deployed to asw with s3 and cloudfront.
