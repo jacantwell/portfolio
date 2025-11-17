@@ -152,9 +152,7 @@ app = FastAPI(lifespan=lifespan)
 # Configure CORS to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
+    allow_origins=["*"
     ],  # Next.js default port
     allow_credentials=True,
     allow_methods=["*"],
@@ -319,6 +317,9 @@ async def chat_stream(request: ChatRequest, app_request: Request):
     Streaming chat endpoint.
     Shows all steps including tool calls and final response.
     """
+
+    print("Not input validation")
+
     if not hasattr(app_request.app.state, "agent"):
         return {"error": "Agent not initialized. Server may still be starting up."}
 
