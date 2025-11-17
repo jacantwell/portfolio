@@ -11,4 +11,4 @@ htmlcov
 coverage.xml
 htmlcov/
 .pytest_cache/
-chroma/documents/*
+documents/*

@@ -3,8 +3,9 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_chroma import Chroma
 from langchain.agents import create_agent
+from langchain_pinecone import PineconeVectorStore
+import os
 from pydantic import BaseModel
 from typing import AsyncIterator, Dict, Any, Literal
 import logging
@@ -23,12 +24,17 @@ async def lifespan(app: FastAPI):
 
     # Initialize embeddings and vector store
     try:
-        embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
-        app.state.vectorstore = Chroma(
-            persist_directory="./chroma/chroma_db", embedding_function=embeddings
+
+        # Initialize embeddings model (must be the SAME model used during upsert)
+        embeddings = GoogleGenerativeAIEmbeddings(
+            model="gemini-embedding-001",
         )
-        app.state.retriever = app.state.vectorstore.as_retriever(
-            search_type="similarity", search_kwargs={"k": 4}
+
+        # Initialize LangChain Pinecone vector store
+        app.state.vectorstore = PineconeVectorStore(
+            index_name="portfolio",
+            embedding=embeddings,
+            pinecone_api_key=os.getenv("PINECONE_API_KEY"),
         )
         print("Vector store initialized successfully")
 

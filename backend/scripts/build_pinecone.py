@@ -1,13 +1,17 @@
 from langchain_community.document_loaders import (
-    UnstructuredMarkdownLoader,
     PyPDFLoader
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_chroma import Chroma
 from pathlib import Path
 import yaml
 import re
+from pinecone.grpc import PineconeGRPC as Pinecone
+from pinecone import ServerlessSpec
+import time
+import os
+import hashlib
+from tqdm import tqdm
 
 def extract_yaml_frontmatter(content: str):
     """Extract YAML frontmatter from markdown content"""
@@ -27,7 +31,7 @@ def extract_yaml_frontmatter(content: str):
     return {}, content
 
 def sanitize_metadata(metadata: dict) -> dict:
-    """Convert metadata values to Chroma-compatible types (str, int, float, bool)"""
+    """Convert metadata values to Pinecone-compatible types (str, int, float, bool)"""
     from datetime import date, datetime
     
     sanitized = {}
@@ -191,66 +195,146 @@ def print_metadata_summary(documents):
         print(f"\nTags Found: {len(tags)}")
         print(f"  All tags: {sorted(tags)}")
 
-def build_vector_store():
-    print("Starting vector store build...")
-    print("=" * 50)
+
+def generate_chunk_id(chunk, index):
+    """Generate a unique, deterministic ID for each chunk"""
+    content_hash = hashlib.md5(chunk.page_content.encode()).hexdigest()[:8]
+    source = chunk.metadata.get('source', 'unknown')
+    source_hash = hashlib.md5(source.encode()).hexdigest()[:8]
+    return f"{source_hash}_{index}_{content_hash}"
+
+def prepare_pinecone_vectors(chunks, embeddings_model):
+    """
+    Generate embeddings and format chunks for Pinecone upsert
     
-    # Load all documents
-    documents = load_documents_from_directory('./chroma/documents')
+    Args:
+        chunks: List of LangChain Document objects
+        embeddings_model: Embeddings model (e.g., GoogleGenerativeAIEmbeddings)
+    
+    Returns:
+        List of tuples (id, embedding, metadata)
+    """
+    print(f"\nGenerating embeddings for {len(chunks)} chunks...")
+    vectors = []
+    
+    # Extract texts for batch embedding
+    texts = [chunk.page_content for chunk in chunks]
+    
+    # Generate embeddings in batch (more efficient)
+    embeddings = embeddings_model.embed_documents(texts)
+    
+    # Prepare vectors with IDs and metadata
+    for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+        vector_id = generate_chunk_id(chunk, idx)
+        
+        # Prepare metadata - Pinecone supports string, number, boolean, list of strings
+        metadata = {
+            'text': chunk.page_content[:1000],  # Store first 1000 chars for preview
+            'full_text': chunk.page_content,  # Store full text
+            **chunk.metadata
+        }
+        
+        vectors.append((vector_id, embedding, metadata))
+    
+    return vectors
+
+def upsert_to_pinecone(index, vectors, batch_size=100):
+    """
+    Upsert vectors to Pinecone in batches
+    
+    Args:
+        index: Pinecone index object
+        vectors: List of tuples (id, embedding, metadata)
+        batch_size: Number of vectors to upsert at once
+    """
+    print(f"\nUpserting {len(vectors)} vectors to Pinecone...")
+    
+    for i in tqdm(range(0, len(vectors), batch_size)):
+        batch = vectors[i:i + batch_size]
+        
+        try:
+            index.upsert(vectors=batch)
+        except Exception as e:
+            print(f"\nError upserting batch {i//batch_size + 1}: {e}")
+            # Retry logic
+            time.sleep(1)
+            try:
+                index.upsert(vectors=batch)
+            except Exception as retry_error:
+                print(f"Retry failed: {retry_error}")
+                continue
+    
+    print("\nUpsert complete!")
+    
+    # Get index stats
+    stats = index.describe_index_stats()
+    print(f"Total vectors in index: {stats.total_vector_count}")
+
+def main():
+    """Main function to orchestrate the entire pipeline"""
+    
+
+
+    # Configuration
+    DOCS_DIRECTORY = "./documents"  # Change this to your directory
+    PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+    INDEX_NAME = "portfolio"
+    EMBEDDING_DIMENSION = 3072  # For Google's gemini-embedding-001 model
+    
+    # Step 1: Initialize Pinecone
+    print("Initializing Pinecone...")
+    pc = Pinecone(api_key=PINECONE_API_KEY)
+    
+    # Step 2: Create or connect to index
+    try:
+        if INDEX_NAME not in pc.list_indexes().names():
+            print(f"Creating new index: {INDEX_NAME}")
+            pc.create_index(
+                name=INDEX_NAME,
+                dimension=EMBEDDING_DIMENSION,
+                metric="cosine",
+                spec=ServerlessSpec(
+                    cloud="aws",
+                    region="us-east-1"
+                )
+            )
+            # Wait for index to be ready
+            time.sleep(10)
+        else:
+            print(f"Index {INDEX_NAME} already exists")
+    except Exception as e:
+        print(f"Index creation note: {e}")
+    
+    index = pc.Index(INDEX_NAME)
+    
+    # Step 3: Initialize embeddings model
+    print("\nInitializing embeddings model...")
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="gemini-embedding-001",
+    )
+    
+    # Step 4: Load documents
+    documents = load_documents_from_directory(DOCS_DIRECTORY)
     
     if not documents:
-        print("No documents found! Check your ./chroma/documents directory")
+        print("No documents found!")
         return
     
-    # Print metadata summary
+    # Step 5: Print metadata summary
     print_metadata_summary(documents)
     
-    # Split into chunks with smart chunking
-    print("\n" + "=" * 50)
-    print("Chunking documents...")
+    # Step 6: Chunk documents
+    print("\nChunking documents...")
     chunks = smart_chunk_documents(documents)
     print(f"Created {len(chunks)} chunks")
     
-    # Show sample chunks from different types
-    print("\nSample chunks by type:")
-    shown_types = set()
-    for chunk in chunks:
-        chunk_type = chunk.metadata.get('type', 'unknown')
-        if chunk_type not in shown_types:
-            print(f"\n  {chunk_type.upper()}:")
-            print(f"    File: {chunk.metadata.get('file_name', 'unknown')}")
-            print(f"    Chunk size: {len(chunk.page_content)} chars")
-            print(f"    Content preview: {chunk.page_content[:150]}...")
-            shown_types.add(chunk_type)
-            if len(shown_types) >= 3:
-                break
+    # Step 7: Generate embeddings and prepare vectors
+    vectors = prepare_pinecone_vectors(chunks, embeddings)
     
-    # Create embeddings and vector store
-    print("\n" + "=" * 50)
-    print("Creating embeddings and vector store...")
-    embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
+    # Step 8: Upsert to Pinecone
+    upsert_to_pinecone(index, vectors, batch_size=100)
     
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory="./chroma/chroma_db",
-        collection_metadata={"hnsw:space": "cosine"}  # Use cosine similarity
-    )
-    
-    print("\n" + "=" * 50)
-    print("✓ Vector store saved to ./chroma/chroma_db")
-    print(f"✓ Indexed {len(chunks)} chunks from {len(documents)} documents")
-    
-    # Test query to verify metadata filtering works
-    print("\nTesting metadata filtering...")
-    test_results = vectorstore.similarity_search(
-        "Python experience",
-        k=2,
-        filter={"type": "profile"}
-    )
-    print(f"  Found {len(test_results)} results with type='profile' filter")
-    
-    return vectorstore
+    print("\nPipeline complete!")
 
 if __name__ == "__main__":
-    build_vector_store()
+    main()
