@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import {
-  Menu,
   Phone,
   Mail,
   Github,
@@ -68,25 +66,14 @@ const projects: Project[] = [
   },
 ];
 
-export function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+interface SidebarProps {
+  isOpen: boolean;
+  toggleSidebar: () => void;
+}
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
-
+export function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   return (
     <>
-      {isOpen ? (
-        <div></div>
-      ) : (
-        <Button
-          variant="secondary"
-          onClick={toggleSidebar}
-          className="fixed left-4 bottom-4 md:left-4 md:top-4 z-50 flex h-10 w-fit items-center justify-center font-bold shadow-lg"
-        >
-          Menu
-        </Button>
-      )}
-
       {/* Overlay */}
       {isOpen && (
         <div
