@@ -2,6 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
+import { Button } from "@/components/retroui/Button";
+import { Textarea } from "./retroui/Textarea";
+import { Badge } from "./retroui/Badge";
+import ReactMarkdown from "react-markdown";
+import { Loader } from "@/components/retroui/Loader";
 
 const TEXT_DISPLAY_DELAY = 30; // Delay in ms for text display
 
@@ -25,6 +30,7 @@ export function ChatInterface() {
   ]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -54,6 +60,7 @@ export function ChatInterface() {
     };
 
     setMessages((prev) => [...prev, assistantMessage]);
+    setIsWaitingForResponse(true);
 
     try {
       // Create abort controller for this request
@@ -83,6 +90,7 @@ export function ChatInterface() {
       let buffer = "";
       let textQueue = ""; // Queue for text to be displayed
       let isDisplaying = false;
+      let firstChunkReceived = false;
 
       // Function to display queued text with delay
       const displayQueuedText = async () => {
@@ -106,7 +114,9 @@ export function ChatInterface() {
             )
           );
 
-          await new Promise((resolve) => setTimeout(resolve, TEXT_DISPLAY_DELAY));
+          await new Promise((resolve) =>
+            setTimeout(resolve, TEXT_DISPLAY_DELAY)
+          );
         }
 
         isDisplaying = false;
@@ -130,6 +140,11 @@ export function ChatInterface() {
           if (line.startsWith("data:")) {
             const data = line.slice(5).trim();
             if (data) {
+              // Turn off waiting state when first chunk arrives
+              if (!firstChunkReceived) {
+                setIsWaitingForResponse(false);
+                firstChunkReceived = true;
+              }
               // Add to queue instead of displaying immediately
               textQueue += data;
               displayQueuedText(); // Start displaying if not already
@@ -157,12 +172,13 @@ export function ChatInterface() {
       }
     } finally {
       setIsStreaming(false);
+      setIsWaitingForResponse(false);
       abortControllerRef.current = null;
     }
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isStreaming) return;
+    if (!input.trim() || isStreaming || isWaitingForResponse) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -187,7 +203,7 @@ export function ChatInterface() {
   };
 
   const handleSuggestedMessage = async (message: string) => {
-    if (isStreaming) return;
+    if (isStreaming || isWaitingForResponse) return;
 
     setInput(message);
     // Small delay to show the input before sending
@@ -228,70 +244,70 @@ export function ChatInterface() {
               }`}
             >
               <div className="mb-2 flex items-center gap-2">
-                <div
-                  className={`flex h-6 w-6 items-center justify-center rounded ${
-                    message.role === "assistant"
-                      ? "bg-amber-600 text-white"
-                      : "bg-zinc-200 dark:bg-zinc-700"
-                  }`}
-                >
-                  <span className="text-xs font-semibold">
-                    {message.role === "assistant" ? "J" : "U"}
-                  </span>
-                </div>
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                  {message.role === "assistant" ? "Jasper" : "You"}
-                </span>
+                {message.role === "assistant" ? (
+                  <Badge variant="surface" className="h-full outline-0">
+                    Jasper
+                  </Badge>
+                ) : (
+                  <Badge variant="solid" className="h-full outline-0">
+                    You
+                  </Badge>
+                )}
               </div>
               <div className="pl-8">
-                <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-zinc-900 dark:text-zinc-100">
-                  {message.content}
-                </p>
+                <ReactMarkdown>{message.content}</ReactMarkdown>
               </div>
             </div>
           ))}
+
+          {/* Loading indicator */}
+          {isWaitingForResponse && (
+            <div className="pl-8">
+              <Loader />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Input Area */}
-      <div className={hasUserMessage ? "" : "py-15"}>
-        <div className="mx-auto max-w-3xl px-4 py-6">
+      <div className={hasUserMessage ? "" : "py-5"}>
+        <div className="mx-auto max-w-3xl px-4 py-2">
           {/* Suggested Messages */}
           {!hasUserMessage && (
-            <div className="mb-4 flex flex-col gap-2">
+            <div className="mb-4 flex flex-col gap-2 px-4">
               {suggestedMessages.map((message, index) => (
-                <button
+                <Button
+                  variant="outline"
                   key={index}
                   onClick={() => handleSuggestedMessage(message)}
-                  className="rounded-lg border border-zinc-300 bg-white px-4 py-3 text-left text-sm text-zinc-700 transition-all hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-700"
                 >
                   {message}
-                </button>
+                </Button>
               ))}
             </div>
           )}
 
-          <div className="relative flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-4 py-2 shadow-sm focus-within:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-zinc-600">
-            <textarea
-              ref={textareaRef}
+          <div className="relative flex items-center gap-2 px-4 py-2">
+            <Textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Ask Jasper a question..."
+              placeholder="Ask me a question..."
               rows={1}
-              className="max-h-[200px] flex-1 resize-none bg-transparent text-[15px] text-zinc-900 placeholder-zinc-400 outline-none dark:text-zinc-100 dark:placeholder-zinc-500"
+              className="px-4 py-2 w-full border-2 shadow-md transition focus:outline-hidden focus:shadow-xs"
             />
-            <button
+            <Button
+              size="icon"
               onClick={handleSend}
-              disabled={!input.trim() || isStreaming}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-white transition-all hover:bg-zinc-700 disabled:bg-zinc-200 disabled:text-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:disabled:bg-zinc-700 dark:disabled:text-zinc-600"
+              disabled={!input.trim() || isStreaming || isWaitingForResponse}
+              className=""
             >
-              <ArrowUp className="h-5 w-5" />
-            </button>
+              <ArrowUp className="w-6 h-6" />
+            </Button>
           </div>
-          {/* <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
             Jasper can make mistakes. Please double-check responses.
-          </p> */}
+          </p>
         </div>
       </div>
     </div>

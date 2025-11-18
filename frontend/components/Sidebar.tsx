@@ -3,14 +3,26 @@
 import { useState } from "react";
 import {
   Menu,
-  X,
   Phone,
   Mail,
   Github,
   ExternalLink,
   Download,
-  Folder,
 } from "lucide-react";
+import { Button } from "@/components/retroui/Button";
+import { Card } from "./retroui/Card";
+import { Accordion } from "./retroui/Accordion";
+import Link from "next/link";
+import { Dialog } from "@/components/retroui/Dialog";
+import { Text } from "./retroui/Text";
+import ReactMarkdown from "react-markdown";
+import {
+  jaspercyclesDescription,
+  s3mobileDescription,
+  gitlogDescription,
+  kairosDescription,
+  portfolioDescription,
+} from "./ProjectDescriptions";
 
 interface Project {
   name: string;
@@ -22,25 +34,37 @@ interface Project {
 
 const projects: Project[] = [
   {
-    name: "findkairos",
+    name: "portfolio",
+    displayName: "Portfolio Website",
+    description: portfolioDescription,
+    websiteUrl: undefined,
+    githubUrl: "https://github.com/jacantwell/portfolio",
+  },
+  {
+    name: "kairos",
     displayName: "findkairos.com",
-    description: "Web app connecting bikepackers worldwide",
+    description: kairosDescription,
     websiteUrl: "https://findkairos.com",
-    githubUrl: "https://github.com/jacantwell/findkairos",
+    githubUrl: "https://github.com/jacantwell/kairos-web",
   },
   {
     name: "jaspercycles",
     displayName: "jaspercycles.com",
-    description: "Real-time bikepacking journey tracker",
+    description: jaspercyclesDescription,
     websiteUrl: "https://jaspercycles.com",
     githubUrl: "https://github.com/jacantwell/jaspercycles",
   },
   {
-    name: "portfolio",
-    displayName: "Portfolio Website",
-    description: "This portfolio website with AI chat",
-    websiteUrl: undefined,
-    githubUrl: "https://github.com/jacantwell/portfolio",
+    name: "s3-mobile",
+    displayName: "s3 Mobile App",
+    description: s3mobileDescription,
+    githubUrl: "https://github.com/jacantwell/s3-mobile",
+  },
+  {
+    name: "gitLog",
+    displayName: "gitLog",
+    description: gitlogDescription,
+    githubUrl: "https://github.com/jacantwell/git-log",
   },
 ];
 
@@ -51,14 +75,17 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Toggle Button - Fixed position */}
-      <button
-        onClick={toggleSidebar}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 text-white shadow-lg transition-all hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-        aria-label="Toggle sidebar"
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </button>
+      {isOpen ? (
+        <div></div>
+      ) : (
+        <Button
+          variant="secondary"
+          onClick={toggleSidebar}
+          className="fixed left-4 top-4 z-50 flex h-10 w-fit items-center justify-center font-bold"
+        >
+          Menu
+        </Button>
+      )}
 
       {/* Overlay */}
       {isOpen && (
@@ -70,112 +97,124 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen w-80 transform bg-white shadow-2xl transition-transform duration-300 ease-in-out dark:bg-zinc-900 ${
+        className={`fixed left-0 top-0 z-40 h-screen w-75 transform shadow-2xl transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-full flex-col overflow-y-auto p-6">
-          {/* Header */}
-          <div className="mb-8 mt-12">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              Jasper Cantwell
-            </h2>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <div className="flex h-full flex-col overflow-hidden">
+          <Card className="flex-1 overflow-y-auto pr-1 justify-between items-start shadow-none hover:shadow-none outline-0">
+            <Card.Header className="pb-0">
+              <Card.Title className="pb-0 text-4xl font-bold">
+                Jasper Cantwell
+              </Card.Title>
+            </Card.Header>
+            <Card.Header className="pt-0 pb-0 text-xl">
               Full-Stack Software Engineer
-            </p>
-          </div>
+            </Card.Header>
+            <Card.Content className="pb-0 pt-2 mb-0">
+              <Button className="w-full px-2 items-center">
+                <a
+                  href="mailto:jasper66018@gmail.com"
+                  className="flex items-center gap-3 rounded-lg text-sm"
+                >
+                  <Mail className="h-4 w-4" />{" "}
+                  <span>jasper66018@gmail.com</span>
+                </a>
+              </Button>
+            </Card.Content>
 
-          {/* Contact Information */}
-          <div className="mb-8">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Contact
-            </h3>
-            <div className="space-y-3">
-              <a
-                href="tel:+447423781157"
-                className="flex items-center gap-3 rounded-lg p-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                <Phone className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-                <span>+44 7423 781157</span>
-              </a>
-              <a
-                href="mailto:jasper66018@gmail.com"
-                className="flex items-center gap-3 rounded-lg p-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                <Mail className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-                <span className="break-all">jasper66018@gmail.com</span>
-              </a>
-            </div>
-          </div>
+            <Card.Content className="pb-0 pt-2 mb-0">
+              <Button className="w-full px-2 items-center">
+                <div className="flex items-center gap-3 rounded-lg text-sm">
+                  <Phone className="h-4 w-4" /> <span>+44 74237 81157</span>
+                </div>
+              </Button>
+            </Card.Content>
 
-          {/* Projects */}
-          <div className="mb-8 flex-1">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Projects
-            </h3>
-            <div className="space-y-2">
-              {projects.map((project) => (
-                <div key={project.name} className="group relative">
-                  <div className="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                    <Folder className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {project.displayName}
-                      </p>
-                      <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400">
-                        {project.description}
-                      </p>
-                    </div>
+            <Card.Content className="pb-0">
+              <a
+                href="/assets/Jasper_Cantwell_CV.pdf"
+                download="Jasper_Cantwell_CV.pdf"
+              >
+                <Button
+                  variant="secondary"
+                  className="w-full px-2 items-center"
+                >
+                  <div className="flex items-center gap-3 rounded-lg text-sm">
+                    <Download className="h-4 w-4" /> <span>Download CV</span>
                   </div>
+                </Button>
+              </a>
+            </Card.Content>
+            <Card.Header className="pb-0">
+              <Card.Title>Projects</Card.Title>
+            </Card.Header>
 
-                  {/* Hover Tooltip with Links */}
-                  <div className="pointer-events-none absolute -right-2 top-0 z-50 translate-x-full opacity-0 transition-all group-hover:pointer-events-auto group-hover:opacity-100">
-                    <div className="ml-2 w-48 rounded-lg border border-zinc-200 bg-white p-3 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
-                      <p className="mb-2 text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                        {project.displayName}
-                      </p>
-                      <div className="space-y-2">
+            <Card.Content className="flex justify-between items-center pt-0 pb-4">
+              <Accordion type="single" collapsible className="space-y-4 w-full">
+                {projects.map((project) => (
+                  <div key={project.name} className="relative">
+                    <Accordion.Item value={project.name}>
+                      <Accordion.Header>{project.name}</Accordion.Header>
+                      <Accordion.Content>
+                        <Dialog>
+                          <Dialog.Trigger asChild>
+                            <Button className="w-full h-fit">
+                              <div className="flex items-center gap-2 rounded text-xs">
+                                <ExternalLink className="h-3 w-3" />{" "}
+                                <span>Description</span>
+                              </div>
+                            </Button>
+                          </Dialog.Trigger>
+                          <Dialog.Content className="max-w-2xl max-h-[85vh] overflow-hidden">
+                            <Dialog.Header>
+                              <Text as="h5">{project.name}</Text>
+                            </Dialog.Header>
+                            <div className="overflow-y-auto max-h-[calc(85vh-4rem)] px-4 pb-4 mt-2">
+                              <article className="prose prose-sm dark:prose-invert max-w-none">
+                                <ReactMarkdown>
+                                  {project.description}
+                                </ReactMarkdown>
+                              </article>
+                            </div>
+                          </Dialog.Content>
+                        </Dialog>
+
                         {project.websiteUrl && (
-                          <a
+                          <Link
                             href={project.websiteUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 rounded p-2 text-xs text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
                           >
-                            <ExternalLink className="h-3 w-3" />
-                            <span>Visit Website</span>
-                          </a>
+                            <Button className="w-full h-fit mt-2">
+                              <div className="flex items-center gap-2 rounded text-xs">
+                                <ExternalLink className="h-3 w-3" />{" "}
+                                <span>Visit Website</span>
+                              </div>
+                            </Button>
+                          </Link>
                         )}
                         {project.githubUrl && (
-                          <a
+                          <Link
                             href={project.githubUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 rounded p-2 text-xs text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
                           >
-                            <Github className="h-3 w-3" />
-                            <span>View on GitHub</span>
-                          </a>
+                            <Button className="w-full h-fit mt-2">
+                              <div className="flex items-center gap-2 rounded text-xs">
+                                <Github className="h-3 w-3" />{" "}
+                                <span>View on Github</span>
+                              </div>
+                            </Button>
+                          </Link>
                         )}
-                      </div>
-                    </div>
+                      </Accordion.Content>
+                    </Accordion.Item>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* CV Download */}
-          <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
-            <a
-              href="/assets/Jasper_Cantwell_CV.pdf"
-              download="Jasper_Cantwell_CV.pdf"
-              className="flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-            >
-              <Download className="h-4 w-4" />
-              <span>Download CV</span>
-            </a>
-          </div>
+                ))}
+              </Accordion>
+            </Card.Content>
+          </Card>
         </div>
       </aside>
     </>
