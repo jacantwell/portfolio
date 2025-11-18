@@ -237,7 +237,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
   };
 
   const suggestedMessages = [
-    "What kind of work environment do you prefer?",
+    "What is your backend tech stack?",
     "Have you worked with cloud platforms?",
     "Can you tell me about your s3-mobile project?",
   ];
