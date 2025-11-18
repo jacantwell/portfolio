@@ -258,11 +258,11 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
             >
               <div className="mb-2 flex items-center gap-2">
                 {message.role === "assistant" ? (
-                  <Badge variant="surface" className="h-full outline-0">
+                  <Badge className="bg-secondary text-secondary-foreground border-2 border-black">
                     Jasper
                   </Badge>
                 ) : (
-                  <Badge variant="solid" className="h-full outline-0">
+                  <Badge className="bg-primary text-secondary-foreground border-2 border-black">
                     You
                   </Badge>
                 )}
@@ -313,6 +313,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
               ref={textareaRef}
               value={input}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
+
               onKeyDown={handleKeyPress}
               placeholder="Ask me a question..."
               rows={1}
@@ -322,7 +323,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
               size="icon"
               onClick={handleSend}
               disabled={!input.trim() || isStreaming || isWaitingForResponse}
-              className=""
+              className="shadow-md hover:shadow active:shadow-none bg-primary shadow-secondary text-secondary-foreground border-2 border-black transition hover:translate-y-1 active:translate-y-2 active:translate-x-1 hover:bg-secondary-hover"
             >
               <ArrowUp className="w-5 h-5" />
             </Button>
