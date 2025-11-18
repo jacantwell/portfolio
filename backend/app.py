@@ -164,8 +164,13 @@ app.add_middleware(
 )
 
 
+class MessageDict(BaseModel):
+    role: str
+    content: str
+
+
 class ChatRequest(BaseModel):
-    message: str
+    messages: list[MessageDict]
     temperature: float = 0.7
 
 
@@ -228,7 +233,7 @@ def ensure_urls_in_response(response: str, project_urls: Dict[str, str]) -> str:
 
 async def generate_agent_stream(
     agent: Any,
-    user_input: str,
+    messages: list[MessageDict],
 ) -> AsyncIterator[Dict[Literal["event", "data"], str]]:
     """
     Streams the agent's response with granular event handling.
@@ -241,21 +246,26 @@ async def generate_agent_stream(
 
     Args:
         agent: The LangChain agent instance
-        user_input: The user's input message
+        messages: The full conversation history (list of message dicts with role and content)
 
     Yields:
         Dict with 'event' and 'data' keys for streaming updates
     """
-    logger.info(f"Starting stream for input: '{user_input[:50]}...'")
+    # Get the last user message for logging
+    last_user_msg = next((msg.content for msg in reversed(messages) if msg.role == "user"), "")
+    logger.info(f"Starting stream for input: '{last_user_msg[:50]}...' (with {len(messages)} messages in history)")
 
     # Track the last seen text to calculate deltas
     last_text = ""
     tool_context = ""  # Track context from tool calls
     project_urls = {}  # Track project URLs from context
 
+    # Convert MessageDict objects to dicts for the agent
+    messages_list = [{"role": msg.role, "content": msg.content} for msg in messages]
+
     try:
         async for chunk in agent.astream(
-            {"messages": [{"role": "user", "content": user_input}]},
+            {"messages": messages_list},
         ):
             # Skip chunks without model data
             if not chunk.get("model"):
@@ -320,6 +330,7 @@ async def chat_stream(request: ChatRequest, app_request: Request):
     """
     Streaming chat endpoint.
     Shows all steps including tool calls and final response.
+    Accepts full conversation history for context-aware responses.
     """
 
     print("Not input validation")
@@ -328,7 +339,7 @@ async def chat_stream(request: ChatRequest, app_request: Request):
         return {"error": "Agent not initialized. Server may still be starting up."}
 
     return EventSourceResponse(
-        generate_agent_stream(app_request.app.state.agent, request.message),
+        generate_agent_stream(app_request.app.state.agent, request.messages),
     )
 
 

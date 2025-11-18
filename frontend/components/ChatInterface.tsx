@@ -79,13 +79,27 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
       // Create abort controller for this request
       abortControllerRef.current = new AbortController();
 
+      // Build conversation history - exclude initial greeting and the placeholder we just added
+      const conversationHistory = messages
+        .filter((msg) => msg.id !== "1") // Exclude initial greeting
+        .map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+
+      // Add the current user message
+      conversationHistory.push({
+        role: "user",
+        content: messageContent,
+      });
+
       const response = await fetch(`${API_URL}/chat/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "text/event-stream",
         },
-        body: JSON.stringify({ message: messageContent }),
+        body: JSON.stringify({ messages: conversationHistory }),
         signal: abortControllerRef.current.signal,
       });
 
