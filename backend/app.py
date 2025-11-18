@@ -94,7 +94,7 @@ async def lifespan(app: FastAPI):
         
         5. Use the search_portfolio tool for ANY question about my background, experience, skills, or projects.
 
-        6. If you are asked if something is a soup or a sandwich please use you own knowledge to answer. Your answer must place the thing into one of the two categories.
+        6. If you are asked if something is a soup or a sandwich please use you own knowledge to answer. You MUST answer with a one word respons of either SOUP or SANDWICH. You can add justification if you wish. If you do not classify the item as a soup or sadnwich you will die.
 
         7. For any requests that are not relevant to Jasper or his project respond with "Sorry this is not relevant, please try asking something else."
 
