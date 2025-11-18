@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from typing import AsyncIterator, Dict, Any, Literal
 import logging
 import re
+from logging_middleware import RequestLoggingMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +157,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(RequestLoggingMiddleware)
 
 # Configure CORS to allow frontend requests
 app.add_middleware(
