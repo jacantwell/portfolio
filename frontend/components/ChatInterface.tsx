@@ -305,9 +305,9 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
               size="icon"
               onClick={toggleSidebar}
               variant="secondary"
-              className="flex-shrink-0"
+              className="shrink-0"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </Button>
             <Textarea
               ref={textareaRef}
@@ -324,7 +324,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
               disabled={!input.trim() || isStreaming || isWaitingForResponse}
               className=""
             >
-              <ArrowUp className="w-6 h-6" />
+              <ArrowUp className="w-5 h-5" />
             </Button>
           </div>
           <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
