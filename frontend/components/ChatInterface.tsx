@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Menu } from "lucide-react";
 import { Button } from "@/components/retroui/Button";
 import { Textarea } from "./retroui/Textarea";
 import { Badge } from "./retroui/Badge";
@@ -19,7 +19,11 @@ interface Message {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  toggleSidebar: () => void;
+}
+
+export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -288,6 +292,14 @@ export function ChatInterface() {
           )}
 
           <div className="relative flex items-center gap-2 px-4 py-2">
+            <Button
+              size="icon"
+              onClick={toggleSidebar}
+              variant="secondary"
+              className="flex-shrink-0"
+            >
+              <Menu className="w-6 h-6" />
+            </Button>
             <Textarea
               value={input}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
