@@ -81,7 +81,7 @@ export function Sidebar() {
         <Button
           variant="secondary"
           onClick={toggleSidebar}
-          className="fixed left-4 top-4 z-50 flex h-10 w-fit items-center justify-center font-bold"
+          className="fixed left-4 bottom-4 md:left-4 md:top-4 z-50 flex h-10 w-fit items-center justify-center font-bold shadow-lg"
         >
           Menu
         </Button>
