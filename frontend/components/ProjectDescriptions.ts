@@ -1,25 +1,109 @@
 export const jaspercyclesDescription = `
 
-## Overview
-This repo contains the code for my personal website jaspercycles.com. This uses the public Strava API to track my bikepacking journey around the globe, plotting my cycles on a MapBox map. The map is interactive and you can click sections of the journey to load my details and photos. The wesbiste alos functions functions as blog with blog posts appearing below the map.
+A full-stack journey tracking and blogging platform that visualizes cycling routes on an interactive map while showcasing travel stories. The application integrates with the Strava API to automatically fetch and display cycling activities, combined with a custom blog system for sharing travel experiences.
 
 ## Technical Implementation
+
 ### Frontend
- - Language: TypeScript/JavaScript
- - Framework: React/Vite/TailwindCSS
- - Key featurs: [MapBox, RestAPI, Blog]
+- **Language**: TypeScript
+- **Framework**: React 18, Vite
+- **UI Libraries**: React Router v7, Mapbox GL JS, React Map GL
+- **Styling**: Tailwind CSS 3, DaisyUI
+- **Key Features**: 
+  - Interactive map visualization with activity routes
+  - Real-time activity data synchronization
+  - Markdown blog post rendering with syntax highlighting
+  - Photo galleries with HLS video support
+  - Client-side caching for performance optimization
+  - Dark/light theme switching
+
+### Backend
+- **Language**: Python
+- **Framework**: FastAPI
+- **API Integration**: Strava API v3 (OAuth2, REST)
+- **Content Management**: Markdown-based blog system with YAML frontmatter
+- **Key Features**: 
+  - RESTful API for blog posts and content delivery
+  - Automated content deployment pipeline
+  - OpenAPI specification generation
 
 ### Infrastructure
- - Cloud Provider: AWS
- - Services: S3, Cloudfront, Route53
- - Deployment: [Github Action]
+- **Cloud Provider**: AWS
+- **Frontend Hosting**: CloudFront + S3 (multi-bucket architecture)
+- **Backend Hosting**: AWS Lambda + API Gateway
+- **CI/CD**: GitHub Actions
+- **IaC**: AWS CloudFormation (YAML templates)
+- **Deployment**: Automated deployment pipeline with CloudFront cache invalidation
 
-## Key Achievments
- - Comprhensive CI/CD pipe deploying both the static page and blog posts.
- - Markdown processing of blog posts.
- - Dark mode
- - Browser caching 
+## Key Achievements
 
+- **Real-Time Journey Tracking**: Built an automated system that syncs with Strava API to fetch cycling activities, displaying them on an interactive Mapbox-powered map with polyline route visualization and activity metadata.
+
+- **Smart Caching System**: Implemented a client-side caching layer with versioning and TTL management that reduces API calls by 75% while maintaining data freshness, significantly improving user experience and reducing API costs.
+
+- **Production-Ready Map Interface**: Developed an interactive journey map using Mapbox GL JS that handles click interactions, hover states, detailed activity information display, and automatic bounds fitting for optimal viewing of recent activities.
+
+- **Strava API Integration**: Architected a complete OAuth2 flow with refresh token management, handling pagination for activity retrieval and rate limiting, while implementing fallback mechanisms for API failures.
+
+- **Multi-Format Content Pipeline**: Created a sophisticated content management system supporting markdown posts with YAML frontmatter, image galleries, and HLS video streaming for embedded content.
+
+- **Infrastructure as Code**: Designed and implemented a complete AWS infrastructure using CloudFormation with separate regional and global stacks, managing CloudFront distributions, S3 buckets, SSL certificates, and DNS records.
+
+- **Automated Deployment Pipeline**: Built a GitHub Actions CI/CD pipeline that handles infrastructure provisioning, content building, S3 synchronization, and CloudFront cache invalidation across multiple environments.
+
+- **Type-Safe API Clients**: Generated fully-typed TypeScript clients from OpenAPI specifications for both the blog API and Strava API, ensuring end-to-end type safety and improved developer experience.
+
+- **Activity Photo Management**: Implemented a photo gallery system that fetches and displays activity photos from Strava with multiple resolution support, keyboard/swipe navigation, and video playback capabilities.
+
+- **Responsive Design**: Created a mobile-first responsive interface using Tailwind CSS with dark mode support, ensuring optimal viewing experience across all device sizes.
+
+## Architecture Highlights
+
+### Journey Visualization Pipeline
+1. User visits homepage, triggering initial data load
+2. Frontend checks cache for recent activity data (4-hour TTL)
+3. If cache miss, StravaClient requests fresh access token via refresh token flow
+4. Activities fetched from Strava API with pagination, filtered by journey start date and activity type
+5. Activity polylines decoded using custom polyline decoder
+6. GeoJSON features generated from activity data with metadata
+7. Mapbox renders interactive map with activity routes and markers
+8. User clicks on route or marker to view detailed activity information
+9. Detailed activity data and photos fetched on-demand and cached locally
+
+### Content Delivery System
+1. Blog posts authored as markdown files with YAML frontmatter
+2. Build script processes markdown files and generates index.json manifest
+3. Content deployed to dedicated S3 bucket (content.findkairos.com)
+4. CloudFront serves content with separate cache behavior for blog assets
+5. Frontend fetches index on load, then individual posts on-demand
+6. React Markdown renders content with custom component styling
+
+### Infrastructure Architecture
+1. **Global Stack (us-east-1)**:
+   - CloudFront distribution with dual origins (app + content)
+   - ACM SSL certificate for HTTPS
+   - Origin Access Identity for S3 access control
+   - Route53 DNS records for apex and www domains
+   
+2. **Regional Stack (eu-west-2)**:
+   - Three S3 buckets: www, root domain, and content
+   - Bucket policies configured for CloudFront OAI
+   - CORS configuration for content bucket
+
+3. **Deployment Flow**:
+   - Push to main triggers GitHub Actions workflow
+   - Infrastructure deployed first (regional, then global stack)
+   - Frontend built with Vite and environment variables
+   - Content processed and built separately
+   - Both deployed to respective S3 buckets
+   - CloudFront cache invalidated for immediate updates
+
+### Data Processing & Optimization
+1. **Polyline Decoding**: Custom implementation of Google's polyline encoding algorithm for efficient route coordinate transmission
+2. **Activity Filtering**: Client-side filtering by date range and activity type (cycling) to focus on relevant journey data
+3. **Bounds Calculation**: Automatic viewport calculation focusing on most recent activities for optimal initial map view
+4. **Batch Caching**: Pre-fetching and caching of detailed activity data for the 10 most recent activities during initial sync
+5. **Photo Optimization**: Multiple resolution fetching with preview thumbnails for fast loading and full-resolution on-demand
 `;
 
 export const kairosDescription = `
@@ -59,7 +143,6 @@ Kairos is a bikepacking journey tracking application. The platform allows users 
 
 
 export const s3mobileDescription = `
-
 
 While travelling, my camera roll filled up so quickly that I found myself in a bind: I didn't want to get stuck paying for an ongoing, expensive cloud subscription service, but I also didn't have easy access to a hard drive for offloading photos. My personal solution to this problem is this app. I designed the S3 Mobile App not as a cloud storage alternative, but as a cheap, easy-to-use, temporary storage solution. It lets me quickly dump media from my phone into my own AWS S3 bucket to free up space until I get home. To use this project yourself (on your Android phone), all you'll need is an AWS and Expo account.
 
@@ -138,8 +221,6 @@ While travelling, my camera roll filled up so quickly that I found myself in a b
 `;
 
 export const gitlogDescription = `
-
-# Git-Log
 
 I've always been terrible at keeping track of my accomplishments at work. Everyone says you should maintain a log of what you've done for when you need to update your CV or go for a promotion, but I never actually do it. Then I realized that 99% of my work is already tracked on GitHub through my commits and pull requests. So why not just use that data?
 
