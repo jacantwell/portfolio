@@ -47,9 +47,18 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
 
   useEffect(() => {
     if (textareaRef.current) {
+      // Reset height to auto to get the correct scrollHeight
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height =
-        textareaRef.current.scrollHeight + "px";
+
+      // Calculate new height with a maximum limit
+      const maxHeight = 150; // Maximum height in pixels (approximately 5-6 lines)
+      const newHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
+
+      textareaRef.current.style.height = newHeight + "px";
+
+      // Enable overflow scrolling if content exceeds max height
+      textareaRef.current.style.overflowY =
+        textareaRef.current.scrollHeight > maxHeight ? "auto" : "hidden";
     }
   }, [input]);
 
@@ -301,10 +310,10 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
               <Menu className="w-6 h-6" />
             </Button>
             <Textarea
+              ref={textareaRef}
               value={input}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setInput(e.target.value)
-              }
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
+
               onKeyDown={handleKeyPress}
               placeholder="Ask me a question..."
               rows={1}
