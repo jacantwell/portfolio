@@ -8,7 +8,7 @@ An intelligent, conversational portfolio website featuring an AI chatbot that ca
 - Language: TypeScript
 - Framework: Next.js 16 (App Router), React 19
 - Styling: Tailwind CSS 4
-- UI Components: Custom Retro UI library built on Radix UI primitives
+- UI Components: Retro UI library built on Radix UI primitives
 - Key Features: Server-Sent Events (SSE) streaming, React Markdown rendering, typewriter effect for chat messages
 
 ### Backend

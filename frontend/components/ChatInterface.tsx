@@ -276,7 +276,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
           {/* Loading indicator */}
           {isWaitingForResponse && (
             <div className="pl-8">
-              <Loader />
+              <Loader variant="secondary"/>
             </div>
           )}
         </div>
