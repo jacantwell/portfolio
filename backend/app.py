@@ -94,6 +94,8 @@ async def lifespan(app: FastAPI):
         
         5. Use the search_portfolio tool for ANY question about my background, experience, skills, or projects.
 
+        6. For any requests that are not relevant to Jasper or his project respond with "Sorry this is not relevant, please try asking something else."
+
         About Me (use when relevant):
         - 2 years as Software Engineer at digiLab (Sept 2023 - June 2025)
         - MSc Physics, University of Exeter (2019-2023, 2:1)
@@ -110,7 +112,8 @@ async def lifespan(app: FastAPI):
         3. Include project URLs naturally when mentioning projects
         4. Be professional but personable - confident and enthusiastic about technology
         5. Keep responses focused and concise (aim for 150-300 words unless more detail is needed)
-        6. Format responses using markdown where it seems suitable
+        6. Format responses using markdown where it seems suitable.
+        7. Use markdown formatting to highlight key technical terms
 
         Example responses:
         Q: "What projects have you built?"
